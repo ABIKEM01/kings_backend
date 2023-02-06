@@ -1,34 +1,61 @@
-const sgMail = require("@sendgrid/mail");
+import sgMail from "@sendgrid/mail";
+import ContactUs from "./contactModel.js";
 
-exports.contact = async (req, res) => {
-  const name = req.body.name;
-  const email = req.body.email;
-  const message = req.body.message;
+const Contact = async (req, res) => {
+  try {
+    const name = req.body.name;
+    const email = req.body.email;
+    const message = req.body.message;
+    const contact = await ContactUs.create({ name, email, message });
 
-  // sgMail.setApiKey("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")
-  sgMail.setApiKey(
-    "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"
-  );
+    // sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-  const msg = {
-    to: "babayodea10@gmail.com",
-    from: "babayodea10@gmail.com",
-    subject: "KingsKid Hospital Support Center",
-    text: `message from: name: ${name} \n email: ${email}  \n message:${message}`,
-  };
-  //Sending the Mail
-  sgMail
-    .send(msg)
-    .then(() => {
-      console.log("email sent successfully");
-      res.status(200).json({
+    // const msg = {
+    //   to: contact,
+    //   from: "babayodea10@gmail.com",
+    //   subject: "Welcome to Artsmiley",
+    //   text: `Welcome dear subscriber, this is artSmiley`,
+    // };
+    // sgMail
+    //   .send(msg)
+    //   .then(() => {
+    //     console.log("EMAIL SENT SUCCESSFULLY");
+    //     res.status(200).json({
+    //       status: "success",
+    //       contact: contact,
+    //     });
+    //   })
+    res
+      .status(200)
+      .json({
         status: "success",
-      });
-    })
-    .catch((error) => {
-      console.error(error);
-      res.status(400).json({
-        status: "failed",
-      });
+        contact: contact,
+      })
+  } catch (err) {
+    res.status(201).json({
+      status: "error",
+      message: err.message,
     });
+  }
 };
+const getContact = async (req, res) => {
+  const { page = 1, limit = 10 } = req.query;
+
+  try {
+    const responses = await ContactUs.find()
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .exec();
+
+    const count = await ContactUs.countDocuments();
+    res.json({
+      responses,
+      totalPages: Math.ceil(count / limit),
+      currentPage: page,
+    });
+  } catch (err) {
+    console.error(err.message);
+  }
+};
+
+export { Contact, getContact };
